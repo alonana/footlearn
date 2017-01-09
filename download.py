@@ -25,6 +25,6 @@ root = lxml_html.fromstring(data)
 rows = root.xpath("//*[@id='print_0']/table//tr")
 header = rows[0].xpath("td/text()")
 for row in rows[1:]:
-	for idx,col in enumerate(row.xpath("td/text()")):
+	for idx,col in enumerate(row.xpath("td//text()")):
 		print(header[idx] + "=" +col + ", ")
 	print()
