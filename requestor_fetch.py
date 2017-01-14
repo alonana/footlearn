@@ -56,9 +56,11 @@ def extract_all_rounds(session_data, section_id):
         rounds_limit -= 1
         if rounds_limit == 0:
             break
-        if round_name == "מחזור 1":
-            break
         prev = browser.find_element_by_xpath('//*[@id="tdPrevLeagueRound{}"]'.format(section_id))
+        link_class = prev.get_attribute("class")
+        if link_class == "DisabledNormalLink":
+            print("no more rounds in this section, quitting")
+            break
         print("click on prev round")
         prev.click()
         time.sleep(3)
