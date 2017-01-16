@@ -2,13 +2,13 @@ import shelve
 import time
 import re
 from selenium import webdriver
-import requestor_model
+from requestor_model import *
 
 
 def extract_sessions():
     sessions_amount = len(browser.find_elements_by_xpath("//*[@id='ddlSeason']/option"))
     print("{} total sessions to scan".format(sessions_amount))
-    sessions_data = requestor_model.SessionsData()
+    sessions_data = SessionsData()
     sessions_limit = 100
     for session_index in range(1, sessions_amount + 1):
         session = browser.find_element_by_xpath('//*[@id="ddlSeason"]/option[{}]'.format(session_index))
@@ -26,7 +26,7 @@ def extract_sessions():
 
 def extract_session():
     print("session extract starting")
-    session_data = requestor_model.SessionData()
+    session_data = SessionData()
     for round_element in browser.find_elements_by_xpath('//*[starts-with(@id,"tdLeagueRound")]'):
         name = round_element.text
         match = re.match("(\\S+)\\s+(\\S+)", name)
