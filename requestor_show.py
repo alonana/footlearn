@@ -1,32 +1,36 @@
 import shelve
 
-from requestor_model import *
-
-
-class GroupsCollector(SessionsScanner):
-    def __init__(self):
-        self.groups = set()
-
-    def game_node(self, session_name, round_number, game):
-        pass
-
-    def position_node(self, session_name, round_number, position):
-        self.groups.add(position['קבוצה'])
-
-
-# show pycharm that we need the imports
-SessionsData()
-SessionData()
-RoundData()
+from analyzer_model import *
 
 db = shelve.open("league_shelve.txt")
 sessions = db["DATA"]
 db.close()
 
 sessions.print()
-groups_collector = GroupsCollector()
-sessions.scan(groups_collector)
-print("groups are:")
-print("\n".join(groups_collector.groups))
-group = next(iter(groups_collector.groups))
-print("analyzing group {}".format(group))
+
+print("teams are:")
+teams_collector = TeamsCollector()
+sessions.scan(teams_collector)
+sorted_teams = sorted(teams_collector.teams)
+print("\n".join(sorted_teams))
+
+print("sessions are:")
+sessions_collector = SessionsCollector()
+sessions.scan(sessions_collector)
+print(sessions_collector)
+
+print("collecting positions")
+positions_collector = PositionCollector()
+sessions.scan(positions_collector)
+
+team = sorted_teams[0]
+print("analyzing team {}".format(team))
+group_collector = TeamCollector(team)
+sessions.scan(group_collector)
+for game in group_collector.games:
+    prev = sessions_collector.get_previous(game.session_round)
+    if prev is None:
+        position = None
+    else:
+        position = positions_collector.get_position(prev, team)
+    print("{} result {} prev position {}".format(game, game.get_result(team), position))

@@ -1,21 +1,24 @@
 from abc import ABCMeta, abstractmethod
+from datetime import datetime
+from enum import Enum
+
 
 class SessionsScanner(metaclass=ABCMeta):
     @abstractmethod
-    def game_node(self, session_name, round_number, game):
+    def game_node(self, game):
         pass
 
     @abstractmethod
-    def position_node(self, session_name, round_number, position):
+    def position_node(self, position):
         pass
 
 
 class PrintScanner(SessionsScanner):
-    def game_node(self, session_name, round_number, game):
-        print("{}\t{}\t{} game: ".format(session_name, round_number, game))
+    def game_node(self, game):
+        print(game)
 
-    def position_node(self, session_name, round_number, position):
-        print("{}\t{}\t{} position: ".format(session_name, round_number, position))
+    def position_node(self, position):
+        print(position)
 
 
 class SessionsData:
@@ -34,7 +37,7 @@ class SessionsData:
     def scan(self, scanner):
         for session_name in sorted(self.sessions.keys()):
             session_data = self.sessions[session_name]
-            session_data.scan(scanner, session_name)
+            session_data.scan(scanner, session_name.split('/')[1])
 
     def print(self):
         scanner = PrintScanner()
@@ -98,9 +101,86 @@ class RoundData:
         self.games.append(table)
 
     def scan(self, scanner, session_name, round_number):
+        session_round = SessionRound(session_name, round_number)
         for round_games in self.games:
             for game in round_games:
-                scanner.game_node(session_name, round_number, game)
+                scanner.game_node(Game(session_round, game))
         for round_position in self.positions:
             for position in round_position:
-                scanner.position_node(session_name, round_number, position)
+                scanner.position_node(Position(session_round, position))
+
+
+GameResult = Enum('GameResult', 'win even loss')
+
+
+class SessionRound:
+    def __init__(self, session_name, round_number):
+        self.session_name = session_name
+        self.round_number = round_number
+
+    def __str__(self):
+        return "{} {}".format(self.session_name, self.round_number)
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __eq__(self, other):
+        return self.round_number == other.round_number and self.session_name == other.session_name
+
+
+class Game:
+    def __init__(self, session_round, dict):
+        self.session_round = session_round
+        players = dict['משחק'].split('-')
+        self.team1 = players[0].strip()
+        self.team2 = players[1].strip()
+        goals = dict['תוצאה'].split('-')
+        self.goals1 = goals[1].strip()
+        self.goals2 = goals[0].strip()
+        self.time = datetime.strptime(dict['תאריך'] + " " + dict['שעה'], '%d/%m/%y %H:%M')
+        self.court = dict['מגרש']
+
+    def __str__(self):
+        return "{session_round}\tgame: {team1} {goals1} vs. {team2} {goals2} at {time} located {court}". \
+            format(session_round=self.session_round,
+                   team1=self.team1,
+                   team2=self.team2,
+                   goals1=self.goals1,
+                   goals2=self.goals2,
+                   time=datetime.strftime(self.time, '%Y-%m-%d %H:%M'),
+                   court=self.court)
+
+    def __repr__(self):
+        return self.__str__()
+
+    @staticmethod
+    def get_result_by_score(score1, score2):
+        if score1 > score2:
+            return GameResult.win
+        if score1 < score2:
+            return GameResult.loss
+        return GameResult.even
+
+    def get_result(self, team):
+        if team == self.team1:
+            return self.get_result_by_score(self.goals1, self.goals2)
+        if team == self.team2:
+            return self.get_result_by_score(self.goals2, self.goals1)
+        raise Exception('team {} is not in game {}'.format(team, self))
+
+
+class Position:
+    def __init__(self, session_round, dict):
+        self.session_round = session_round
+        self.games = dict["מש'"]
+        self.loss = dict["הפ'"]
+        self.rank = dict['מיקום']
+        self.score = dict["נק'"]
+        self.team = dict['קבוצה']
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return "{session_round}\tposition: {team} {rank}". \
+            format(session_round=self.session_round, team=self.team, rank=self.rank)
