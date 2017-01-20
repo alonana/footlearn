@@ -5,20 +5,20 @@ from enum import Enum
 
 class SessionsScanner(metaclass=ABCMeta):
     @abstractmethod
-    def game_node(self, game):
+    def scan_game_node(self, game):
         pass
 
     @abstractmethod
-    def position_node(self, position):
+    def scan_rank_node(self, rank):
         pass
 
 
 class PrintScanner(SessionsScanner):
-    def game_node(self, game):
+    def scan_game_node(self, game):
         print(game)
 
-    def position_node(self, position):
-        print(position)
+    def scan_rank_node(self, rank):
+        print(rank)
 
 
 class SessionsData:
@@ -104,13 +104,22 @@ class RoundData:
         session_round = SessionRound(session_name, round_number)
         for round_games in self.games:
             for game in round_games:
-                scanner.game_node(Game(session_round, game))
+                scanner.scan_game_node(Game(session_round, game))
         for round_position in self.positions:
             for position in round_position:
-                scanner.position_node(Position(session_round, position))
+                scanner.scan_rank_node(Position(session_round, position))
 
 
-GameResult = Enum('GameResult', 'win even loss')
+class GameResult(Enum):
+    WIN = 1,
+    EVEN = 2,
+    LOSS = 3
+
+    def __eq__(self, other):
+        return self.value == other.value
+
+    def __ne__(self, other):
+        return self.value != other.value
 
 
 class SessionRound:
@@ -129,16 +138,16 @@ class SessionRound:
 
 
 class Game:
-    def __init__(self, session_round, dict):
+    def __init__(self, session_round, data_dictionary):
         self.session_round = session_round
-        players = dict['משחק'].split('-')
+        players = data_dictionary['משחק'].split('-')
         self.team1 = players[0].strip()
         self.team2 = players[1].strip()
-        goals = dict['תוצאה'].split('-')
+        goals = data_dictionary['תוצאה'].split('-')
         self.goals1 = goals[1].strip()
         self.goals2 = goals[0].strip()
-        self.time = datetime.strptime(dict['תאריך'] + " " + dict['שעה'], '%d/%m/%y %H:%M')
-        self.court = dict['מגרש']
+        self.time = datetime.strptime(data_dictionary['תאריך'] + " " + data_dictionary['שעה'], '%d/%m/%y %H:%M')
+        self.court = data_dictionary['מגרש']
 
     def __str__(self):
         return "{session_round}\tgame: {team1} {goals1} vs. {team2} {goals2} at {time} located {court}". \
@@ -156,10 +165,10 @@ class Game:
     @staticmethod
     def get_result_by_score(score1, score2):
         if score1 > score2:
-            return GameResult.win
+            return GameResult.WIN
         if score1 < score2:
-            return GameResult.loss
-        return GameResult.even
+            return GameResult.LOSS
+        return GameResult.EVEN
 
     def get_result(self, team):
         if team == self.team1:
@@ -170,13 +179,13 @@ class Game:
 
 
 class Position:
-    def __init__(self, session_round, dict):
+    def __init__(self, session_round, data_dictionary):
         self.session_round = session_round
-        self.games = dict["מש'"]
-        self.loss = dict["הפ'"]
-        self.rank = dict['מיקום']
-        self.score = dict["נק'"]
-        self.team = dict['קבוצה']
+        self.games = data_dictionary["מש'"]
+        self.loss = data_dictionary["הפ'"]
+        self.rank = int(data_dictionary['מיקום'])
+        self.score = data_dictionary["נק'"]
+        self.team = data_dictionary['קבוצה']
 
     def __repr__(self):
         return self.__str__()

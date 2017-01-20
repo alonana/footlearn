@@ -1,8 +1,10 @@
+import re
 import shelve
 import time
-import re
+
 from selenium import webdriver
-from requestor_model import *
+
+from src.requestor_model import *
 
 
 def extract_sessions():

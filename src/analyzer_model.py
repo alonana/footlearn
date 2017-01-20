@@ -1,15 +1,15 @@
-from requestor_model import *
+from src.requestor_model import *
 
 
 class TeamsCollector(SessionsScanner):
     def __init__(self):
         self.teams = set()
 
-    def game_node(self, game):
+    def scan_game_node(self, game):
         pass
 
-    def position_node(self, position):
-        self.teams.add(position.team)
+    def scan_rank_node(self, rank):
+        self.teams.add(rank.team)
 
 
 class TeamCollector(SessionsScanner):
@@ -17,11 +17,11 @@ class TeamCollector(SessionsScanner):
         self.team_name = team_name
         self.games = []
 
-    def game_node(self, game):
+    def scan_game_node(self, game):
         if game.team1 == self.team_name or game.team2 == self.team_name:
             self.games.append(game)
 
-    def position_node(self, position):
+    def scan_rank_node(self, rank):
         pass
 
 
@@ -32,11 +32,11 @@ class SessionsCollector(SessionsScanner):
     def __str__(self):
         return str(self.sessions)
 
-    def game_node(self, game):
+    def scan_game_node(self, game):
         self.add(game.session_round)
 
-    def position_node(self, position):
-        self.add(position.session_round)
+    def scan_rank_node(self, rank):
+        self.add(rank.session_round)
 
     def add(self, session_round):
         if not session_round in self.sessions:
@@ -49,19 +49,36 @@ class SessionsCollector(SessionsScanner):
         return self.sessions[index - 1]
 
 
-class PositionCollector(SessionsScanner):
+class GamesCollector(SessionsScanner):
     def __init__(self):
-        self.positions = {}
+        self.games = []
 
-    def game_node(self, game):
+    def __str__(self):
+        return str(self.games)
+
+    def scan_game_node(self, game):
+        self.games.append(game)
+
+    def scan_rank_node(self, rank):
+        pass
+
+
+class RankCollector(SessionsScanner):
+    def __init__(self):
+        self.ranks = {}
+
+    def scan_game_node(self, game):
         pass
 
     @staticmethod
     def key(session_round, team):
         return "{} {}".format(session_round, team)
 
-    def position_node(self, position):
-        self.positions[self.key(position.session_round, position.team)] = position
+    def scan_rank_node(self, rank):
+        self.ranks[self.key(rank.session_round, rank.team)] = rank
 
-    def get_position(self, session_round, team):
-        return self.positions[self.key(session_round, team)]
+    def get_rank(self, session_round, team):
+        key = self.key(session_round, team)
+        if key in self.ranks.keys():
+            return self.ranks[key]
+        return None
