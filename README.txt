@@ -4,6 +4,8 @@ curl -O https://bootstrap.pypa.io/get-pip.py
 sudo python3.4 get-pip.py
 sudo pip3.4 install beautifulsoup4
 sudo pip3.4 install lxml
+sudo pip3.4 install keras
+sudo pip3.4 install tensorflow
 
 # install selenium
 sudo apt-get install python-pip
