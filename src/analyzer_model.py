@@ -42,11 +42,12 @@ class SessionsCollector(SessionsScanner):
         if not session_round in self.sessions:
             self.sessions.append(session_round)
 
-    def get_previous(self, session_round):
+    def get_previous(self, session_round, steps):
         index = self.sessions.index(session_round)
-        if index == 0:
+        index -= steps
+        if index < 0:
             return None
-        return self.sessions[index - 1]
+        return self.sessions[index]
 
 
 class GamesCollector(SessionsScanner):
