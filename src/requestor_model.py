@@ -144,8 +144,8 @@ class Game:
         self.team1 = players[0].strip()
         self.team2 = players[1].strip()
         goals = data_dictionary['תוצאה'].split('-')
-        self.goals1 = goals[1].strip()
-        self.goals2 = goals[0].strip()
+        self.goals1 = int(goals[1].strip())
+        self.goals2 = int(goals[0].strip())
         self.time = datetime.strptime(data_dictionary['תאריך'] + " " + data_dictionary['שעה'], '%d/%m/%y %H:%M')
         self.court = data_dictionary['מגרש']
 
@@ -175,6 +175,20 @@ class Game:
             return self.get_result_by_score(self.goals1, self.goals2)
         if team == self.team2:
             return self.get_result_by_score(self.goals2, self.goals1)
+        raise Exception('team {} is not in game {}'.format(team, self))
+
+    def get_goals_scored(self, team):
+        if team == self.team1:
+            return self.goals1
+        if team == self.team2:
+            return self.goals2
+        raise Exception('team {} is not in game {}'.format(team, self))
+
+    def get_goals_suffered(self, team):
+        if team == self.team1:
+            return self.goals2
+        if team == self.team2:
+            return self.goals1
         raise Exception('team {} is not in game {}'.format(team, self))
 
 

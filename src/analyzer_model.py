@@ -5,10 +5,10 @@ class TeamsCollector(SessionsScanner):
     def __init__(self):
         self.teams = set()
 
-    def scan_game_node(self, game):
+    def scan_game_node(self, game: Game):
         pass
 
-    def scan_rank_node(self, rank):
+    def scan_rank_node(self, rank: Position):
         self.teams.add(rank.team)
 
 
@@ -53,15 +53,28 @@ class SessionsCollector(SessionsScanner):
 class GamesCollector(SessionsScanner):
     def __init__(self):
         self.games = []
+        self.games_by_session_and_team = {}
 
     def __str__(self):
         return str(self.games)
 
     def scan_game_node(self, game):
         self.games.append(game)
+        self.games_by_session_and_team[self.get_key(game.session_round, game.team1)] = game
+        self.games_by_session_and_team[self.get_key(game.session_round, game.team2)] = game
 
     def scan_rank_node(self, rank):
         pass
+
+    @staticmethod
+    def get_key(session_round, team):
+        return "{} {}".format(session_round, team)
+
+    def get_by_session_and_team(self, session_round: SessionRound, team: str) -> Game:
+        key = self.get_key(session_round, team)
+        if key in self.games_by_session_and_team:
+            return self.games_by_session_and_team[key]
+        return None
 
 
 class RankCollector(SessionsScanner):
