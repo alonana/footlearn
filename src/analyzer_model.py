@@ -76,6 +76,15 @@ class GamesCollector(SessionsScanner):
             return self.games_by_session_and_team[key]
         return None
 
+    def get_prev_by_teams_before_session(self, session_round: SessionRound, team1, team2)->Game:
+        for game in reversed(self.games):
+            if game.session_round>= session_round:
+                continue
+            if not game.includes_teams(team1,team2):
+                continue
+            return game
+        return None
+
 
 class RankCollector(SessionsScanner):
     def __init__(self):
@@ -91,7 +100,7 @@ class RankCollector(SessionsScanner):
     def scan_rank_node(self, rank):
         self.ranks[self.key(rank.session_round, rank.team)] = rank
 
-    def get_rank(self, session_round, team):
+    def get_rank(self, session_round:SessionRound, team):
         key = self.key(session_round, team)
         if key in self.ranks.keys():
             return self.ranks[key]

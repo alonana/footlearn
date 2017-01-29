@@ -9,5 +9,5 @@ y = 0
 for row in matrix:
     if row[-1] == 1:
         y += 1
-print("{} out of {} = {}% are y=1".format(y, len(matrix), y/len(matrix)))
-numpy.savetxt("../data/matrix.txt", matrix, '% 4d')
+print("{} out of {} = {}% are y=1".format(y, len(matrix), int(y*100/len(matrix))))
+numpy.savetxt("../data/matrix.txt", matrix, '% 8d')

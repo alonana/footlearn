@@ -68,6 +68,8 @@ class PrepareData:
             if not self.prepare_row_game(row, previous_session, game.team2, "X02b", prev_index):
                 return None
 
+        self.prepare_row_same_game(row, game, "X03")
+
         game_result = game.get_result(game.team1)
 
         row["Y1_WIN"] = int(game_result == GameResult.WIN)
@@ -83,7 +85,7 @@ class PrepareData:
         self.verbose(matrix_row)
         return matrix_row
 
-    def prepare_row_rank(self, row, session_round, team, prefix, prev_index):
+    def prepare_row_rank(self, row, session_round: SessionRound, team, prefix, prev_index):
         rank = self.positions_collector.get_rank(session_round, team)
         if rank is None:
             self.verbose("missing prev rank")
@@ -91,17 +93,46 @@ class PrepareData:
         row[prefix + "_PREV_RANK_HISTORY{}".format(prev_index)] = rank.rank
         return True
 
-    def prepare_row_game(self, row, session_round, team, prefix, prev_index):
+    def prepare_row_game(self, row, session_round: SessionRound, team, prefix, prev_index):
         prev_game = self.games_collector.get_by_session_and_team(session_round, team)
         if prev_game is None:
             self.verbose("missing prev game")
             return False
 
         game_result = prev_game.get_result(team)
-        row[prefix + "_PREV_GAME_WIN_HISTORY{}".format(prev_index)] = int(game_result == GameResult.WIN)
-        row[prefix + "_PREV_GAME_EVEN_HISTORY{}".format(prev_index)] = int(game_result == GameResult.EVEN)
-        row[prefix + "_PREV_GAME_LOSS_HISTORY{}".format(prev_index)] = int(game_result == GameResult.LOSS)
-        row[prefix + "_PREV_GAME_GOAL_SCORED_HISTORY{}".format(prev_index)] = prev_game.get_goals_scored(team)
-        row[prefix + "_PREV_GAME_GOAL_SUFFERED_HISTORY{}".format(prev_index)] = prev_game.get_goals_suffered(team)
-
+        row["{}_PREV_GAME_HISTORY{}_WIN".format(prefix, prev_index)] = int(game_result == GameResult.WIN)
+        row["{}_PREV_GAME_HISTORY{}_EVEN".format(prefix, prev_index)] = int(game_result == GameResult.EVEN)
+        row["{}_PREV_GAME_HISTORY{}_LOSS".format(prefix, prev_index)] = int(game_result == GameResult.LOSS)
+        row["{}_PREV_GAME_HISTORY{}_GOAL_SCORED".format(prefix, prev_index)] = prev_game.get_goals_scored(team)
+        row["{}_PREV_GAME_HISTORY{}_GOAL_SUFFERED".format(prefix, prev_index)] = prev_game.get_goals_suffered(team)
         return True
+
+    def prepare_row_same_game(self, row, game: Game, prefix):
+        history_game = game
+        for history in range(0, HISTORY):
+            if history_game is not None:
+                history_game = self.games_collector.get_prev_by_teams_before_session(history_game.session_round,
+                                                                                     game.team1, game.team2)
+            exists = 0
+            win = -10000
+            even = -10000
+            loss = -10000
+            scored = -10000
+            suffered = -10000
+
+            if history_game is not None:
+                self.verbose("same game located: {}".format(history_game))
+                game_result = history_game.get_result(game.team1)
+                exists = 1
+                win = int(game_result == GameResult.WIN)
+                even = int(game_result == GameResult.EVEN)
+                loss = int(game_result == GameResult.LOSS)
+                scored = history_game.get_goals_scored(game.team1)
+                suffered = history_game.get_goals_suffered(game.team1)
+
+            row["{}_SAME_GAME_HISTORY{}".format(prefix, history)] = exists
+            row["{}_SAME_GAME_HISTORY{}_WIN".format(prefix, history)] = win
+            row["{}_SAME_GAME_HISTORY{}_EVEN".format(prefix, history)] = even
+            row["{}_SAME_GAME_HISTORY{}_LOSS".format(prefix, history)] = loss
+            row["{}_SAME_GAME_HISTORY{}_GOAL_SCORED".format(prefix, history)] = scored
+            row["{}_SAME_GAME_HISTORY{}_GOAL_SUFFERED".format(prefix, history)] = suffered
