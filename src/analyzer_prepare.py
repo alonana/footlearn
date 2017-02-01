@@ -73,8 +73,8 @@ class PrepareData:
         game_result = game.get_result(game.team1)
 
         row["Y1_WIN"] = int(game_result == GameResult.WIN)
-        # row["Y2_EVEN"] = int(game_result == GameResult.EVEN)
-        # row["Y3_LOSS"] = int(game_result == GameResult.LOSS)
+        row["Y2_EVEN"] = int(game_result == GameResult.EVEN)
+        row["Y3_LOSS"] = int(game_result == GameResult.LOSS)
         self.verbose(sorted(row.items()))
 
         matrix_row = []
