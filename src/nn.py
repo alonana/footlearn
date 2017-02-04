@@ -1,8 +1,10 @@
-from sklearn.model_selection import StratifiedKFold
-from keras.models import Sequential
-from keras.layers import Dense
-import numpy
 import matplotlib.pyplot as plt
+import numpy
+from keras.layers import Dense
+from keras.layers import Dropout
+from keras.models import Sequential
+
+EPOCH = 600
 
 dataset = numpy.loadtxt("../data/matrix.txt", dtype=int)
 seed = 7
@@ -21,11 +23,13 @@ print("first lines in Y:\n{}".format(Y[0:header]))
 # create model
 model = Sequential()
 model.add(Dense(12, input_dim=len(X[0]), init='uniform', activation='relu'))
+model.add(Dropout(0.2))
 model.add(Dense(12, init='uniform', activation='relu'))
+model.add(Dropout(0.2))
 model.add(Dense(classes, init='uniform', activation='sigmoid'))
 # Compile model
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
-history = model.fit(X, Y, validation_split=0.3, nb_epoch=20, batch_size=1000)
+history = model.fit(X, Y, validation_split=0.3, nb_epoch=EPOCH, batch_size=1000)
 
 # kfold = StratifiedKFold(n_splits=5, shuffle=True, random_state=seed)
 # for train, test in kfold.split(X, Y):
@@ -35,23 +39,21 @@ history = model.fit(X, Y, validation_split=0.3, nb_epoch=20, batch_size=1000)
 scores = model.evaluate(X, Y)
 print("\n%s: %.2f%%" % (model.metrics_names[1], scores[1] * 100))
 
-
-plt.plot(history.history['acc'])
-plt.plot(history.history['val_acc'])
+plt.plot(history.history['acc'], color="#0c8c52")
+plt.plot(history.history['loss'], color="#ed3807")
+plt.plot(history.history['val_acc'], color="#44936f", linestyle="--", linewidth=3)
+plt.plot(history.history['val_loss'], color="#db7053", linestyle="--", linewidth=3)
 plt.title('model accuracy')
-plt.ylabel('accuracy')
 plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-plt.show()
+plt.legend(['acc', 'loss', 'val_acc', 'val_loss', ], loc='upper right')
+# plt.show()
+axes = plt.gca()
+axes.set_xticks(numpy.arange(0, EPOCH, EPOCH / 10))
+axes.set_ylim([0.6, 0.9])
+axes.set_yticks(numpy.arange(0.6, 0.9, 0.02))
+plt.grid()
 
-# summarize history for loss
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
-plt.title('model loss')
-plt.ylabel('loss')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-plt.show()
+plt.savefig("../data/nn.svg")
 
 
 

@@ -7,11 +7,13 @@ sudo pip3.4 install lxml
 sudo pip3.4 install keras
 sudo pip3.4 install tensorflow
 
-# split the data
+# split the data training/cross validation
 sudo pip3.4 install -U scikit-learn
 
 # plot graphs
 sudo pip3.4 install matplotlib
+sudo apt-get install python3-matplotlib
+sudo apt-get install inkscape
 
 # install selenium
 sudo apt-get install python-pip
