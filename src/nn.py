@@ -62,6 +62,7 @@ def run_nn(result_file, drop1=None, drop2=None, drop3=None):
     plt.close()
 
 
+
 run_nn("x_x_x")
 run_nn("4_x_x", drop1=0.4)
 run_nn("x_4_x", drop2=0.4)
