@@ -1,4 +1,5 @@
 import shelve
+import datetime
 
 from src.analyzer_model import *
 
@@ -69,6 +70,10 @@ class PrepareData:
                 return None
 
         self.prepare_row_same_game(row, game, "X03")
+        row["X04_DAY"] = game.time.weekday()
+        row["X04_DAY_SATURDAY"] = int(game.time.weekday() == 5)
+        row["X04_HOUR"] = game.time.hour
+        row["X04_HOUR_LATE"] = int(game.time.hour >= 20)
 
         game_result = game.get_result(game.team1)
 
@@ -105,6 +110,10 @@ class PrepareData:
         row["{}_PREV_GAME_HISTORY{}_LOSS".format(prefix, prev_index)] = int(game_result == GameResult.LOSS)
         row["{}_PREV_GAME_HISTORY{}_GOAL_SCORED".format(prefix, prev_index)] = prev_game.get_goals_scored(team)
         row["{}_PREV_GAME_HISTORY{}_GOAL_SUFFERED".format(prefix, prev_index)] = prev_game.get_goals_suffered(team)
+        row["{}_PREV_GAME_HISTORY{}_DAY".format(prefix, prev_index)] = prev_game.time.weekday()
+        row["{}_PREV_GAME_HISTORY{}_SATURDAY".format(prefix, prev_index)] = int(prev_game.time.weekday() == 5)
+        row["{}_PREV_GAME_HISTORY{}_HOUR".format(prefix, prev_index)] = prev_game.time.hour
+        row["{}_PREV_GAME_HISTORY{}_HOUR_LATE".format(prefix, prev_index)] = int(prev_game.time.hour >= 20)
         return True
 
     def prepare_row_same_game(self, row, game: Game, prefix):
@@ -119,6 +128,10 @@ class PrepareData:
             loss = -10000
             scored = -10000
             suffered = -10000
+            weekday = -10000
+            saturday = -10000
+            hour = -10000
+            hour_late = -10000
 
             if history_game is not None:
                 self.verbose("same game located: {}".format(history_game))
@@ -129,6 +142,10 @@ class PrepareData:
                 loss = int(game_result == GameResult.LOSS)
                 scored = history_game.get_goals_scored(game.team1)
                 suffered = history_game.get_goals_suffered(game.team1)
+                weekday = history_game.time.weekday()
+                saturday = int(history_game.time.weekday() == 5)
+                hour = history_game.time.hour
+                hour_late= int(history_game.time.hour>=20)
 
             row["{}_SAME_GAME_HISTORY{}".format(prefix, history)] = exists
             row["{}_SAME_GAME_HISTORY{}_WIN".format(prefix, history)] = win
@@ -136,3 +153,7 @@ class PrepareData:
             row["{}_SAME_GAME_HISTORY{}_LOSS".format(prefix, history)] = loss
             row["{}_SAME_GAME_HISTORY{}_GOAL_SCORED".format(prefix, history)] = scored
             row["{}_SAME_GAME_HISTORY{}_GOAL_SUFFERED".format(prefix, history)] = suffered
+            row["{}_SAME_GAME_HISTORY{}_DAY".format(prefix, history)] = weekday
+            row["{}_SAME_GAME_HISTORY{}_SATURDAY".format(prefix, history)] = saturday
+            row["{}_SAME_GAME_HISTORY{}_HOUR".format(prefix, history)] = hour
+            row["{}_SAME_GAME_HISTORY{}_HOUR_LATE".format(prefix, history)] = hour_late
