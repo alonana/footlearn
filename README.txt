@@ -6,6 +6,7 @@ sudo pip3.4 install beautifulsoup4
 sudo pip3.4 install lxml
 sudo pip3.4 install keras
 sudo pip3.4 install tensorflow
+sudo pip3.4 install h5py
 
 # split the data training/cross validation
 sudo pip3.4 install -U scikit-learn

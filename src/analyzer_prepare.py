@@ -1,5 +1,4 @@
 import shelve
-import datetime
 
 from src.analyzer_model import *
 
@@ -145,7 +144,7 @@ class PrepareData:
                 weekday = history_game.time.weekday()
                 saturday = int(history_game.time.weekday() == 5)
                 hour = history_game.time.hour
-                hour_late= int(history_game.time.hour>=20)
+                hour_late = int(history_game.time.hour >= 20)
 
             row["{}_SAME_GAME_HISTORY{}".format(prefix, history)] = exists
             row["{}_SAME_GAME_HISTORY{}_WIN".format(prefix, history)] = win

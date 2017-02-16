@@ -1,6 +1,11 @@
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
 from enum import Enum
+import shelve
+import re
+import os
+
+SPLIT_FOLDER = "../data/split"
 
 
 class GameResult(Enum):
@@ -119,6 +124,7 @@ class Position:
         return "{session_round}\tposition: {team} {rank}". \
             format(session_round=self.session_round, team=self.team, rank=self.rank)
 
+
 class SessionsScanner(metaclass=ABCMeta):
     @abstractmethod
     def scan_game_node(self, game: Game):
@@ -147,6 +153,9 @@ class SessionsData:
     def __str__(self):
         return str(self.sessions)
 
+    def __eq__(self, other):
+        return self.sessions == other.sessions
+
     def add(self, name, session_data):
         self.sessions[name] = session_data
 
@@ -159,6 +168,22 @@ class SessionsData:
         scanner = PrintScanner()
         self.scan(scanner)
 
+    def split_save(self):
+        for name, data in self.sessions.items():
+            splitted = SessionsData()
+            splitted.add(name, data)
+            filename = re.sub('[^0-9a-zA-Z]+', '_', name)
+            db = shelve.open("{}/{}.txt".format(SPLIT_FOLDER, filename))
+            db["DATA"] = splitted
+            db.close()
+
+    def split_load(self):
+        for filename in os.listdir(SPLIT_FOLDER):
+            db = shelve.open("{}/{}".format(SPLIT_FOLDER, filename))
+            splitted = db["DATA"]
+            db.close()
+            self.sessions.update(splitted.sessions)
+
 
 class SessionData:
     def __init__(self):
@@ -169,6 +194,9 @@ class SessionData:
 
     def __str__(self):
         return str(self.rounds)
+
+    def __eq__(self, other):
+        return self.rounds == other.rounds
 
     def add_position(self, round_name, table):
         round_data = self.get_round_data(round_name)
@@ -210,6 +238,9 @@ class RoundData:
     def __str__(self):
         return "{{\n\tgames: {},\n\tpositions: {}}}".format(self.games, self.positions)
 
+    def __eq__(self, other):
+        return self.positions == other.positions and self.games == other.games
+
     def add_position(self, table):
         self.positions.append(table)
 
@@ -224,5 +255,3 @@ class RoundData:
         for round_position in self.positions:
             for position in round_position:
                 scanner.scan_rank_node(Position(session_round, position))
-
-

@@ -1,5 +1,3 @@
-import re
-import shelve
 import time
 
 from selenium import webdriver
