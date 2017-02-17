@@ -4,12 +4,15 @@ from selenium import webdriver
 
 from src.requestor_model import *
 
+MAX_ROUNDS = 5
+MAX_SESSIONS = 1
+
 
 def extract_sessions():
     sessions_amount = len(browser.find_elements_by_xpath("//*[@id='ddlSeason']/option"))
     print("{} total sessions to scan".format(sessions_amount))
     sessions_data = SessionsData()
-    sessions_limit = 100
+    sessions_limit = MAX_SESSIONS
     for session_index in range(1, sessions_amount + 1):
         session = browser.find_element_by_xpath('//*[@id="ddlSeason"]/option[{}]'.format(session_index))
         session_name = session.text
@@ -40,7 +43,7 @@ def extract_session():
 
 def extract_all_rounds(session_data, section_id):
     print("handling section ID {}".format(section_id))
-    rounds_limit = 100
+    rounds_limit = MAX_ROUNDS
     while True:
         round_element = browser.find_element_by_xpath('//*[@id="tdLeagueRound{}"]'.format(section_id))
         round_name = round_element.text
@@ -114,6 +117,7 @@ browser = webdriver.Firefox()
 browser.get('http://football.org.il/Leagues/Pages/LeagueDetails.aspx')
 print("page loaded")
 data = extract_sessions()
-db = shelve.open("league_shelve.txt")
-db["DATA"] = data
-db.close()
+# db = shelve.open("league_shelve.txt")
+# db["DATA"] = data
+# db.close()
+data.split_save_sessions("../data/split2")

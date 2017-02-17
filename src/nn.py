@@ -106,10 +106,13 @@ loaded_model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['acc
 score = loaded_model.evaluate(x_matrix, y_matrix, verbose=0)
 print("%s: %.2f%%" % (loaded_model.metrics_names[1], score[1] * 100))
 predictions = loaded_model.predict(x_matrix)
+total_ok = 0
 for i, y in enumerate(y_matrix):
     predict_probability = predictions[i]
     predict_boolean = int(predict_probability > 0.5)
     accurate = predict_boolean == y[0]
+    if accurate:
+        total_ok += 1
     # if not accurate:
     print("index {} expected {} actual {}({}) accurate {}".format(
         i,
@@ -117,3 +120,5 @@ for i, y in enumerate(y_matrix):
         predict_boolean,
         predict_probability,
         accurate))
+
+print("total ok {}/{} = {}", total_ok, len(y_matrix), total_ok / len(y_matrix))

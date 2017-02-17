@@ -5,8 +5,6 @@ import shelve
 import re
 import os
 
-SPLIT_FOLDER = "../data/split"
-
 
 class GameResult(Enum):
     WIN = 1,
@@ -51,16 +49,24 @@ class SessionRound:
 
 
 class Game:
-    def __init__(self, session_round, data_dictionary):
+    def __init__(self, session_round, data_dictionary=None, team1=None, team2=None, time=None):
         self.session_round = session_round
-        players = data_dictionary['משחק'].split('-')
-        self.team1 = players[0].strip()
-        self.team2 = players[1].strip()
-        goals = data_dictionary['תוצאה'].split('-')
-        self.goals1 = int(goals[1].strip())
-        self.goals2 = int(goals[0].strip())
-        self.time = datetime.strptime(data_dictionary['תאריך'] + " " + data_dictionary['שעה'], '%d/%m/%y %H:%M')
-        self.court = data_dictionary['מגרש']
+        if data_dictionary is None:
+            self.team1 = team1
+            self.team2 = team2
+            self.time = time
+            self.goals1 = -1
+            self.goals2 = -1
+            self.court = "NA"
+        else:
+            players = data_dictionary['משחק'].split('-')
+            self.team1 = players[0].strip()
+            self.team2 = players[1].strip()
+            goals = data_dictionary['תוצאה'].split('-')
+            self.goals1 = int(goals[1].strip())
+            self.goals2 = int(goals[0].strip())
+            self.time = datetime.strptime(data_dictionary['תאריך'] + " " + data_dictionary['שעה'], '%d/%m/%y %H:%M')
+            self.court = data_dictionary['מגרש']
 
     def __str__(self):
         return "{session_round}\tgame: {team1} {goals1} vs. {team2} {goals2} at {time} located {court}". \
@@ -168,21 +174,28 @@ class SessionsData:
         scanner = PrintScanner()
         self.scan(scanner)
 
-    def split_save(self):
+    def split_save_sessions(self, root_folder):
         for name, data in self.sessions.items():
-            splitted = SessionsData()
-            splitted.add(name, data)
-            filename = re.sub('[^0-9a-zA-Z]+', '_', name)
-            db = shelve.open("{}/{}.txt".format(SPLIT_FOLDER, filename))
-            db["DATA"] = splitted
-            db.close()
+            safe_name = re.sub('[^0-9a-zA-Z]+', '_', name)
+            folder = "{}/{}".format(root_folder, safe_name)
+            os.makedirs(folder)
+            session_file_name = "{}/session_name.txt".format(folder)
+            with open(session_file_name, "w") as session_file:
+                session_file.write(name)
+            session_data_folder = "{}/data".format(folder)
+            os.makedirs(session_data_folder)
+            data.split_save_session(session_data_folder)
 
-    def split_load(self):
-        for filename in os.listdir(SPLIT_FOLDER):
-            db = shelve.open("{}/{}".format(SPLIT_FOLDER, filename))
-            splitted = db["DATA"]
-            db.close()
-            self.sessions.update(splitted.sessions)
+    def split_load_sessions(self, root_folder):
+        for folder_name in os.listdir(root_folder):
+            folder = "{}/{}".format(root_folder, folder_name)
+            session_file_name = "{}/session_name.txt".format(folder)
+            with open(session_file_name, "r") as session_file:
+                name = session_file.read()
+            data = SessionData()
+            session_data_folder = "{}/data".format(folder)
+            data.split_load_session(session_data_folder)
+            self.sessions[name] = data
 
 
 class SessionData:
@@ -225,6 +238,24 @@ class SessionData:
             round_name = "{}{}".format(round_name_prefix, round_number)
             round_data = self.rounds[round_name]
             round_data.scan(scanner, session_name, round_number)
+
+    def split_save_session(self, folder_path):
+        for name, data in self.rounds.items():
+            splitted = SessionData()
+            splitted.rounds[name] = data
+            name_safe = re.sub('[^0-9a-zA-Z]+', '_', name)
+            db = shelve.open("{}/{}.txt".format(folder_path, name_safe))
+            db["DATA"] = splitted
+            db.close()
+
+    def split_load_session(self, folder_path):
+        for file_name in os.listdir(folder_path):
+            file_path = "{}/{}".format(folder_path, file_name)
+            db = shelve.open(file_path)
+            print("loading {}".format(file_path))
+            splitted = db["DATA"]
+            db.close()
+            self.rounds.update(splitted.rounds)
 
 
 class RoundData:

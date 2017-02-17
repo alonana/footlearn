@@ -22,24 +22,24 @@ class PrepareData:
         if self.print_info:
             print(message)
 
-    def prepare_data_matrix(self):
-        db = shelve.open("../data/league_shelve.txt")
-        sessions = db["DATA"]
-        db.close()
+    def prepare_data_matrix(self, sessions: SessionsData, predictions_games=None):
 
-        self.verbose("collecting sessions")
+        # db = shelve.open("../data/league_shelve.txt")
+        # sessions = db["DATA"]
+        # db.close()
+        self.info("collecting sessions")
         sessions.scan(self.sessions_collector)
         self.verbose(self.sessions_collector)
 
-        self.verbose("collecting positions")
+        self.info("collecting positions")
         sessions.scan(self.positions_collector)
 
-        self.verbose("collecting games")
+        self.info("collecting games")
         sessions.scan(self.games_collector)
 
         data_matrix = []
         skipped = 0
-        self.verbose("creating features")
+        self.info("creating features")
         for game in self.games_collector.games:
             data_row = self.prepare_row(game)
             if data_row is None:
@@ -47,6 +47,16 @@ class PrepareData:
                 skipped += 1
             else:
                 data_matrix.append(data_row)
+
+        if predictions_games is not None:
+            self.verbose("creating predictions")
+            for game in predictions_games:
+                self.info("prediction game is {}".format(game))
+                data_row = self.prepare_row(game)
+                if data_row is None:
+                    raise "failed to prepare prediction for {}".format(game)
+                data_matrix.append(data_row)
+
         self.info(self.last_data)
         self.info("{} rows skipped, {} rows collected".format(skipped, len(data_matrix)))
         return data_matrix
