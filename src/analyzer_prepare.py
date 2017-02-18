@@ -1,5 +1,3 @@
-import shelve
-
 from src.analyzer_model import *
 
 HISTORY = 5
@@ -9,6 +7,7 @@ class PrepareData:
     def __init__(self):
         self.print_verbose = False
         self.print_info = True
+        self.print_last = False
         self.sessions_collector = SessionsCollector()
         self.positions_collector = RankCollector()
         self.games_collector = GamesCollector()
@@ -22,11 +21,7 @@ class PrepareData:
         if self.print_info:
             print(message)
 
-    def prepare_data_matrix(self, sessions: SessionsData, predictions_games=None):
-
-        # db = shelve.open("../data/league_shelve.txt")
-        # sessions = db["DATA"]
-        # db.close()
+    def prepare_data_matrix(self, sessions: SessionsData, predictions_games=None, prepare_data=True):
         self.info("collecting sessions")
         sessions.scan(self.sessions_collector)
         self.verbose(self.sessions_collector)
@@ -39,26 +34,30 @@ class PrepareData:
 
         data_matrix = []
         skipped = 0
-        self.info("creating features")
-        for game in self.games_collector.games:
-            data_row = self.prepare_row(game)
-            if data_row is None:
-                self.verbose("skipping game")
-                skipped += 1
-            else:
-                data_matrix.append(data_row)
-
-        if predictions_games is not None:
-            self.verbose("creating predictions")
-            for game in predictions_games:
-                self.info("prediction game is {}".format(game))
+        if prepare_data:
+            self.info("creating data features")
+            for game in self.games_collector.games:
                 data_row = self.prepare_row(game)
                 if data_row is None:
-                    raise "failed to prepare prediction for {}".format(game)
+                    self.verbose("skipping game")
+                    skipped += 1
+                else:
+                    data_matrix.append(data_row)
+
+        if predictions_games is not None:
+            self.info("creating predictions features")
+            for game in predictions_games:
+                self.info("prediction game is {}".format(game))
+                self.sessions_collector.add_if_required(game.session_round)
+                data_row = self.prepare_row(game)
+                if data_row is None:
+                    raise Exception("failed to prepare prediction for {}".format(game))
                 data_matrix.append(data_row)
 
-        self.info(self.last_data)
-        self.info("{} rows skipped, {} rows collected".format(skipped, len(data_matrix)))
+        if self.print_last:
+            self.info(self.last_data)
+        if prepare_data:
+            self.info("{} rows skipped, {} rows collected".format(skipped, len(data_matrix)))
         return data_matrix
 
     def prepare_row(self, game: Game):
@@ -67,6 +66,8 @@ class PrepareData:
         row = {}
         for prev_index in range(1, HISTORY + 1):
             previous_session = self.sessions_collector.get_previous(game.session_round, prev_index)
+            self.verbose("history {} session is {} previous session is {}".format(
+                prev_index, game.session_round, previous_session))
             if previous_session is None:
                 return None
             if not self.prepare_row_rank(row, previous_session, game.team1, "X01a", prev_index):

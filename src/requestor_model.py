@@ -20,8 +20,8 @@ class GameResult(Enum):
 
 class SessionRound:
     def __init__(self, session_name, round_number):
-        self.session_name = session_name
-        self.round_number = round_number
+        self.session_name = int(session_name)
+        self.round_number = int(round_number)
 
     def __str__(self):
         return "{} {}".format(self.session_name, self.round_number)
