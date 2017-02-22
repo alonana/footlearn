@@ -7,10 +7,10 @@ from keras.models import model_from_json
 
 FILE_MODEL_WEIGHTS = "../data/model.h5"
 FILE_MODEL_STRUCTURE = "../data/nn_model.json"
-ACCURACY_TO = 1.1
+ACCURACY_TO = 0.9
 ACCURACY_FROM = 0.6
-EPOCH = 300
-Y_CLASSES = 1
+EPOCH = 1000
+Y_CLASSES = 3
 
 
 class Dataset:
@@ -22,25 +22,24 @@ class Dataset:
         self.y_matrix = dataset[:, columns - Y_CLASSES:columns]
         self.x_width = len(self.x_matrix[0])
         self.height = len(self.y_matrix)
-        # print("first lines in dataset:\n{}".format(dataset[0:header]))
-        # print("first lines in X:\n{}".format(X[0:header]))
-        # print("first lines in Y:\n{}".format(Y[0:header]))
+        # print("first line in X:\n{}".format(self.x_matrix[0]))
+        # print("first line in Y:\n{}".format(self.y_matrix[0]))
 
 
-def run_nn(result_file, drop1=None, drop2=None, drop3=None):
-    dataset = Dataset("data")
+def run_nn(result_file, drop1=None, drop2=None, drop3=None, dataset_suffix="data"):
+    dataset = Dataset(dataset_suffix)
 
     # create model
     model = Sequential()
     if drop1 is not None:
         model.add(Dropout(drop1, input_shape=(dataset.x_width,)))
 
-    model.add(Dense(150, input_dim=dataset.x_width, init='uniform', activation='relu'))
+    model.add(Dense(300, input_dim=dataset.x_width, init='uniform', activation='relu'))
 
     if drop2 is not None:
         model.add(Dropout(drop2))
 
-    model.add(Dense(150, init='uniform', activation='relu'))
+    model.add(Dense(300, init='uniform', activation='relu'))
 
     if drop3 is not None:
         model.add(Dropout(drop3))
@@ -55,13 +54,12 @@ def run_nn(result_file, drop1=None, drop2=None, drop3=None):
     scores = model.evaluate(dataset.x_matrix, dataset.y_matrix)
     print("\n%s: %.2f%%" % (model.metrics_names[1], scores[1] * 100))
 
-    plt.plot(history.history['acc'], color="#0c8c52")
-    plt.plot(history.history['loss'], color="#ed3807")
-    plt.plot(history.history['val_acc'], color="#44936f", linestyle="--", linewidth=3)
-    plt.plot(history.history['val_loss'], color="#db7053", linestyle="--", linewidth=3)
+    stats = history.history
+    plt.plot(stats['acc'], color="#0c8c52")
+    plt.plot(stats['val_acc'], color="#db7053", linestyle="--", linewidth=3)
     plt.title('model accuracy {} {} {}'.format(drop1, drop2, drop3))
     plt.xlabel('epoch')
-    plt.legend(['acc', 'loss', 'val_acc', 'val_loss', ], loc='upper right')
+    plt.legend(['acc', 'val_acc', ], loc='upper right')
     axes = plt.gca()
     axes.set_xticks(numpy.arange(0, EPOCH, EPOCH / 10))
     axes.set_ylim([ACCURACY_FROM, ACCURACY_TO])
@@ -89,34 +87,45 @@ def load_model():
         return model
 
 
-def predict(model):
-    dataset = Dataset("predictions")
+def predict(model, dataset_suffix="predictions"):
+    dataset = Dataset(dataset_suffix)
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
     score = model.evaluate(dataset.x_matrix, dataset.y_matrix, verbose=0)
     print("%s: %.2f%%" % (model.metrics_names[1], score[1] * 100))
     predictions = model.predict(dataset.x_matrix)
-    total_ok = 0
+    total_ok_absolute = 0
+    total_ok_relative = 0
     for i, y in enumerate(dataset.y_matrix):
-        predict_probability = predictions[i]
-        predict_boolean = int(predict_probability > 0.5)
-        accurate = predict_boolean == y[0]
-        if accurate:
-            total_ok += 1
-        print("index {} expected {} actual {}({}) accurate {}".format(
+        predict_probabilities = predictions[i]
+        predict_absolute = [int(predict_probabilities[col] > 0.5) for col in range(Y_CLASSES)]
+        predict_relative = [int(predict_probabilities[col] == max(predict_probabilities)) for col in range(Y_CLASSES)]
+        accurates_absolute = [predict_absolute[col] == y[col] for col in range(Y_CLASSES)]
+        accurates_relative = [predict_relative[col] == y[col] for col in range(Y_CLASSES)]
+        if all(accurates_absolute):
+            total_ok_absolute += 1
+        if all(accurates_relative):
+            total_ok_relative += 1
+        print("index {} expected {}  probabilities {:<40} absolute{} accurate{:<30} relative{} accurate{}".format(
             i,
-            y[0],
-            predict_boolean,
-            predict_probability,
-            accurate))
+            y,
+            str(predict_probabilities),
+            predict_absolute,
+            str(accurates_absolute),
+            predict_relative,
+            accurates_relative
+        ))
 
-    print("total ok {}/{} = {}", total_ok, dataset.height, total_ok / dataset.height)
+    print("total ok absolute {}/{} = {}".format(total_ok_absolute, dataset.height, total_ok_absolute / dataset.height))
+    print("total ok relative {}/{} = {}".format(total_ok_relative, dataset.height, total_ok_relative / dataset.height))
 
 
 numpy.random.seed(7)
-train = False
-if train:
+do_train = False
+do_predict = True
+if do_train:
     fit_model = run_nn("5_2_2", drop1=0.5, drop2=0.2, drop3=0.2)
     save_model(fit_model)
 
-loaded_model = load_model()
-predict(loaded_model)
+if do_predict:
+    loaded_model = load_model()
+    predict(loaded_model, "data")

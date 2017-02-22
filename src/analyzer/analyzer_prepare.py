@@ -1,4 +1,4 @@
-from src.analyzer_model import *
+from src.analyzer.analyzer_model import *
 
 HISTORY = 5
 

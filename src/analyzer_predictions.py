@@ -1,6 +1,6 @@
 import numpy
 
-from src.analyzer_prepare import *
+from src.analyzer.analyzer_prepare import *
 
 sessions = SessionsData()
 sessions.split_load_sessions("../data/split")
