@@ -1,6 +1,7 @@
 from src.analyzer.analyzer_model import *
 
-HISTORY = 5
+HISTORY_BOTH = 4
+HISTORY_SELF = 9
 
 
 class PrepareData:
@@ -64,7 +65,7 @@ class PrepareData:
         self.last_data = str(game) + "\n"
         self.verbose("analyzing game {}".format(game))
         row = {}
-        for prev_index in range(1, HISTORY + 1):
+        for prev_index in range(1, HISTORY_SELF + 1):
             previous_session = self.sessions_collector.get_previous(game.session_round, prev_index)
             self.verbose("history {} session is {} previous session is {}".format(
                 prev_index, game.session_round, previous_session))
@@ -79,7 +80,9 @@ class PrepareData:
             if not self.prepare_row_game(row, previous_session, game.team2, "X02b", prev_index):
                 return None
 
-        self.prepare_row_same_game(row, game, "X03")
+        if not self.prepare_row_same_game(row, game, "X03"):
+            return None
+
         row["X04_DAY"] = game.time.weekday()
         row["X04_DAY_SATURDAY"] = int(game.time.weekday() == 5)
         row["X04_HOUR"] = game.time.hour
@@ -128,42 +131,25 @@ class PrepareData:
 
     def prepare_row_same_game(self, row, game: Game, prefix):
         history_game = game
-        for history in range(0, HISTORY):
-            if history_game is not None:
-                history_game = self.games_collector.get_prev_by_teams_before_session(history_game.session_round,
-                                                                                     game.team1, game.team2)
-            exists = 0
-            win = -10000
-            even = -10000
-            loss = -10000
-            scored = -10000
-            suffered = -10000
-            weekday = -10000
-            saturday = -10000
-            hour = -10000
-            hour_late = -10000
+        for history in range(0, HISTORY_BOTH):
+            history_game = self.games_collector.get_prev_by_teams_before_session(history_game.session_round,
+                                                                                 game.team1, game.team2)
+            if history_game is None:
+                return False
 
-            if history_game is not None:
-                self.verbose("same game located: {}".format(history_game))
-                game_result = history_game.get_result(game.team1)
-                exists = 1
-                win = int(game_result == GameResult.WIN)
-                even = int(game_result == GameResult.EVEN)
-                loss = int(game_result == GameResult.LOSS)
-                scored = history_game.get_goals_scored(game.team1)
-                suffered = history_game.get_goals_suffered(game.team1)
-                weekday = history_game.time.weekday()
-                saturday = int(history_game.time.weekday() == 5)
-                hour = history_game.time.hour
-                hour_late = int(history_game.time.hour >= 20)
+            self.verbose("same game located: {}".format(history_game))
+            game_result = history_game.get_result(game.team1)
 
-            row["{}_SAME_GAME_HISTORY{}".format(prefix, history)] = exists
-            row["{}_SAME_GAME_HISTORY{}_WIN".format(prefix, history)] = win
-            row["{}_SAME_GAME_HISTORY{}_EVEN".format(prefix, history)] = even
-            row["{}_SAME_GAME_HISTORY{}_LOSS".format(prefix, history)] = loss
-            row["{}_SAME_GAME_HISTORY{}_GOAL_SCORED".format(prefix, history)] = scored
-            row["{}_SAME_GAME_HISTORY{}_GOAL_SUFFERED".format(prefix, history)] = suffered
-            row["{}_SAME_GAME_HISTORY{}_DAY".format(prefix, history)] = weekday
-            row["{}_SAME_GAME_HISTORY{}_SATURDAY".format(prefix, history)] = saturday
-            row["{}_SAME_GAME_HISTORY{}_HOUR".format(prefix, history)] = hour
-            row["{}_SAME_GAME_HISTORY{}_HOUR_LATE".format(prefix, history)] = hour_late
+            row["{}_SAME_GAME_HISTORY{}_WIN".format(prefix, history)] = int(game_result == GameResult.WIN)
+            row["{}_SAME_GAME_HISTORY{}_EVEN".format(prefix, history)] = int(game_result == GameResult.EVEN)
+            row["{}_SAME_GAME_HISTORY{}_LOSS".format(prefix, history)] = int(game_result == GameResult.LOSS)
+            row["{}_SAME_GAME_HISTORY{}_GOAL_SCORED".format(prefix, history)] = history_game.get_goals_scored(
+                game.team1)
+            row["{}_SAME_GAME_HISTORY{}_GOAL_SUFFERED".format(prefix, history)] = history_game.get_goals_suffered(
+                game.team1)
+            row["{}_SAME_GAME_HISTORY{}_DAY".format(prefix, history)] = history_game.time.weekday()
+            row["{}_SAME_GAME_HISTORY{}_SATURDAY".format(prefix, history)] = int(history_game.time.weekday() == 5)
+            row["{}_SAME_GAME_HISTORY{}_HOUR".format(prefix, history)] = history_game.time.hour
+            row["{}_SAME_GAME_HISTORY{}_HOUR_LATE".format(prefix, history)] = int(history_game.time.hour >= 20)
+
+        return True
