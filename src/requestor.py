@@ -4,7 +4,7 @@ from selenium import webdriver
 
 from src.requestor_model import *
 
-MAX_ROUNDS = 5
+MAX_ROUNDS = 2
 MAX_SESSIONS = 1
 
 
@@ -117,7 +117,4 @@ browser = webdriver.Firefox()
 browser.get('http://football.org.il/Leagues/Pages/LeagueDetails.aspx')
 print("page loaded")
 data = extract_sessions()
-# db = shelve.open("league_shelve.txt")
-# db["DATA"] = data
-# db.close()
 data.split_save_sessions("../data/split2")

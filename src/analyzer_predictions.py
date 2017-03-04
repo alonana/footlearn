@@ -17,8 +17,6 @@ prediction_games = []
 session_round = SessionRound(2017, 23)
 prediction_games.append(Game(session_round, team1=ordered_teams[22], team2=ordered_teams[11],
                              time=datetime.strptime("2017-02-18 20:29", '%Y-%m-%d %H:%M')))
-prediction_games.append(Game(session_round, team1=ordered_teams[4], team2=ordered_teams[21],
-                             time=datetime.strptime("2017-02-19 18:29", '%Y-%m-%d %H:%M')))
 prediction_games.append(Game(session_round, team1=ordered_teams[6], team2=ordered_teams[5],
                              time=datetime.strptime("2017-02-19 20:14", '%Y-%m-%d %H:%M')))
 prediction_games.append(Game(session_round, team1=ordered_teams[15], team2=ordered_teams[0],

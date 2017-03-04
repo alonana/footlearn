@@ -120,7 +120,7 @@ if do_predict:
     model_win = load_model(WIN)
     model_even = load_model(EVEN)
     model_loss = load_model(LOSS)
-    prediction_database = "data"
+    prediction_database = "predictions"
     predictions_win = predict(model_win, dataset_suffix=prediction_database, y_column=COLUMN_WIN)
     predictions_even = predict(model_even, dataset_suffix=prediction_database, y_column=COLUMN_EVEN)
     predictions_loss = predict(model_loss, dataset_suffix=prediction_database, y_column=COLUMN_LOSS)
@@ -131,7 +131,8 @@ if do_predict:
     total_ok_win = 0
     total_ok_even = 0
     total_ok_loss = 0
-    total_ok_all = 0
+    total_ok_absolute = 0
+    total_ok_relative = 0
     for i in range(len(y_win)):
         prediction_win = predictions_win[i]
         prediction_even = predictions_even[i]
@@ -145,6 +146,20 @@ if do_predict:
         ok_win = (actual_win == predict_absolute_win)
         ok_even = (actual_even == predict_absolute_even)
         ok_loss = (actual_loss == predict_absolute_loss)
+        max_prediction = max(prediction_win, prediction_even, prediction_loss)
+        ok_relative = False
+        if prediction_win == max_prediction:
+            if actual_win:
+                ok_relative = True
+        elif prediction_loss == max_prediction:
+            if actual_loss:
+                ok_relative = True
+        else:
+            if actual_even:
+                ok_relative = True
+
+        if ok_relative:
+            total_ok_relative += 1
 
         if ok_win:
             total_ok_win += 1
@@ -153,9 +168,10 @@ if do_predict:
         if ok_loss:
             total_ok_loss += 1
         if ok_win and ok_even and ok_loss:
-            total_ok_all += 1
+            total_ok_absolute += 1
 
-        print("actual ({},{},{}) predict (win/even/loss) ({},{},{}) absolute ({},{},{})".format(
+        print("{}: actual ({},{},{}) predict (win/even/loss) ({},{},{}) absolute ({},{},{}) relative max {} relative ok {}".format(
+            i,
             actual_win,
             actual_even,
             actual_loss,
@@ -164,37 +180,16 @@ if do_predict:
             prediction_loss,
             predict_absolute_win,
             predict_absolute_even,
-            predict_absolute_loss
+            predict_absolute_loss,
+            max_prediction,
+            ok_relative
         ))
 
-        #     accurates_absolute = [predict_absolute[col] == y[col] for col in range(dataset.classes)]
-        #     predict_relative = [int(predict_probabilities[col] == max(predict_probabilities)) for col in
-        #                         range(dataset.classes)]
-        #     accurates_relative = [predict_relative[col] == y[col] for col in range(dataset.classes)]
-        #     accurate_absolute_all = all(accurates_absolute)
-        #     accurates_relative_all = all(accurates_relative)
-        #     if accurate_absolute_all:
-        #         total_ok_absolute += 1
-        #     if accurates_relative_all:
-        #         total_ok_relative += 1
-        #     print(
-        #         "index {} expected {}  probabilities {:<40} absolute{} accurate{:<21}={:<7} relative{} accurate{:<21}={:<7}".format(
-        #             i,
-        #             y,
-        #             str(predict_probabilities),
-        #             predict_absolute,
-        #             str(accurates_absolute),
-        #             str(accurate_absolute_all),
-        #             predict_relative,
-        #             str(accurates_relative),
-        #             str(accurates_relative_all),
-        #         ))
-        #
-        # print("total ok absolute {}/{} = {}".format(total_ok_absolute, dataset.height, total_ok_absolute / dataset.height))
-        # print("total ok relative {}/{} = {}".format(total_ok_relative, dataset.height, total_ok_relative / dataset.height))
-        print("total ok (winn/even/loss) ({},{},{})  all {} ".format(
-            total_ok_win,
-            total_ok_even,
-            total_ok_loss,
-            total_ok_all
-        ))
+    print("total ok (winn/even/loss) ({},{},{})  absolute {} relative {} out of {}".format(
+        total_ok_win,
+        total_ok_even,
+        total_ok_loss,
+        total_ok_absolute,
+        total_ok_relative,
+        len(y_win)
+    ))
